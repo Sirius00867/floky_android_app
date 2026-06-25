@@ -1,0 +1,15 @@
+# Ignore duplicate project directory
+floky/
+
+# IDE
+.idea/
+.vscode/
+
+# Environment files with secrets
+.env
+.env.local
+.env.production
+
+# Temporary files
+*.log
+.DS_Store
