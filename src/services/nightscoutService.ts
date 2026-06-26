@@ -1,6 +1,7 @@
 import { persistStorage } from '@/store/storage';
 import * as ExpoCrypto from 'expo-crypto';
 import { validateHttpsUrl, sanitizeExternalUrl, isCorsOrNetworkError, sanitizeError } from '@/utils/securityUtils';
+import { proxyFetch } from '@/utils/proxyFetch';
 
 const STORAGE_KEY = 'nightscout_config';
 
@@ -97,28 +98,16 @@ function cleanUrl(url: string) {
   return sanitizeExternalUrl(url);
 }
 
-function isBrowser(): boolean {
-  return typeof window !== 'undefined' && typeof window.document !== 'undefined';
-}
-
 /**
  * Wrapper de fetch específico para Nightscout.
- *
- * En web (PWA): redirige por el proxy nativo de Expo Router (/api/proxy?url=...)
- * que ejecuta la petición desde el servidor Node.js sin restricciones CORS.
- * En nativo (iOS/Android): llama directamente al servidor sin CORS.
+ * Delega en proxyFetch para manejar CORS en web (proxy local o externo).
  */
 function nsProxyFetch(
   nsUrl: string,
   path: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const cleanedBase = cleanUrl(nsUrl);
-  const fullUrl = `${cleanedBase}${path}`;
-  if (isBrowser()) {
-    return fetch(`/api/proxy?url=${encodeURIComponent(fullUrl)}`, init);
-  }
-  return fetch(fullUrl, init);
+  return proxyFetch(`${cleanUrl(nsUrl)}${path}`, init);
 }
 
 async function buildHeaders(apiSecret: string): Promise<Record<string, string>> {
