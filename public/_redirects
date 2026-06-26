@@ -1,5 +1,0 @@
-﻿/api/nightscout/*  https://site--nightscout--kb7xvjmtg28t.code.run/:splat  200!
-/api/dexcom/*      https://share2.dexcom.com/:splat                         200!
-/api/librelink/*   https://api.libreview.io/:splat                          200!
-/api/tidepool/*    https://api.tidepool.org/:splat                          200!
-/*                 /index.html                                               200

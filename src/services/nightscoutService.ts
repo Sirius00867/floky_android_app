@@ -104,11 +104,8 @@ function isBrowser(): boolean {
 /**
  * Wrapper de fetch específico para Nightscout.
  *
- * En web (PWA/Netlify): la petición va a /api/nightscout<path> y Netlify la
- * redirige a la Netlify Function nightscout-proxy.js, que lee el servidor real
- * del header X-Nightscout-Target. De este modo la URL del usuario nunca se
- * hardcodea en _redirects y funciona para cualquier servidor Nightscout.
- *
+ * En web (PWA): redirige por el proxy nativo de Expo Router (/api/proxy?url=...)
+ * que ejecuta la petición desde el servidor Node.js sin restricciones CORS.
  * En nativo (iOS/Android): llama directamente al servidor sin CORS.
  */
 function nsProxyFetch(
@@ -117,12 +114,11 @@ function nsProxyFetch(
   init: RequestInit = {},
 ): Promise<Response> {
   const cleanedBase = cleanUrl(nsUrl);
+  const fullUrl = `${cleanedBase}${path}`;
   if (isBrowser()) {
-    const headers = new Headers(init.headers as HeadersInit | undefined);
-    headers.set('X-Nightscout-Target', cleanedBase);
-    return fetch(`/api/nightscout${path}`, { ...init, headers });
+    return fetch(`/api/proxy?url=${encodeURIComponent(fullUrl)}`, init);
   }
-  return fetch(`${cleanedBase}${path}`, init);
+  return fetch(fullUrl, init);
 }
 
 async function buildHeaders(apiSecret: string): Promise<Record<string, string>> {

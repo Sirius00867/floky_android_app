@@ -1,5 +1,5 @@
 /**
- * GerberaAvatar — Gerbera azul cobalto
+ * GerberaAvatar — Gerbera azul cobalto — v2
  *
  * Muñeco sólido: UN solo Animated.View + UN solo Svg.
  * Las 3 coronas de pétalos se dibujan estáticamente en SVG nativo
@@ -183,7 +183,7 @@ export function GerberaAvatar({ animationState, size = 120 }: AvatarProps) {
 
           {/* ── Corona exterior — 16 pétalos largos ── */}
           {OUTER_ANGLES.map((angle, i) => (
-            <G key={`o${i}`} rotation={angle} origin="50,50">
+            <G key={`o${i}`} transform={`rotate(${angle}, 50, 50)`}>
               <Path d={OUTER_PATH} fill={outerC} opacity={0.92} />
               <Path d="M 50 50 L 50 8"
                 stroke="rgba(255,255,255,0.2)" strokeWidth={0.6} fill="none" />
@@ -192,7 +192,7 @@ export function GerberaAvatar({ animationState, size = 120 }: AvatarProps) {
 
           {/* ── Corona media — 12 pétalos ── */}
           {MID_ANGLES.map((angle, i) => (
-            <G key={`m${i}`} rotation={angle} origin="50,50">
+            <G key={`m${i}`} transform={`rotate(${angle}, 50, 50)`}>
               <Path d={MID_PATH} fill={midC} opacity={0.88} />
               <Path d="M 50 50 L 50 16"
                 stroke="rgba(255,255,255,0.18)" strokeWidth={0.5} fill="none" />
@@ -201,7 +201,7 @@ export function GerberaAvatar({ animationState, size = 120 }: AvatarProps) {
 
           {/* ── Corona interior — 8 pétalos cortos ── */}
           {INNER_ANGLES.map((angle, i) => (
-            <G key={`i${i}`} rotation={angle} origin="50,50">
+            <G key={`i${i}`} transform={`rotate(${angle}, 50, 50)`}>
               <Path d={INNER_PATH} fill={innerC} opacity={0.85} />
             </G>
           ))}
