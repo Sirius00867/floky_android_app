@@ -1,4 +1,5 @@
 import { persistStorage } from '@/store/storage';
+import { proxyFetch } from '@/utils/proxyFetch';
 
 const STORAGE_KEY = 'librelink_tokens';
 const BASE_URL = 'https://api.librelink.io';
@@ -36,7 +37,7 @@ export async function loginLibreLinkUp(
   password: string,
 ): Promise<boolean> {
   try {
-    const res = await fetch(`${BASE_URL}/v2/auth/login`, {
+    const res = await proxyFetch(`${BASE_URL}/v2/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -87,7 +88,7 @@ export async function fetchLibreLinkUpReadings(): Promise<LibreLinkReading[]> {
 
   try {
     // Obtener lista de dispositivos
-    const devRes = await fetch(`${BASE_URL}/v2/devices`, {
+    const devRes = await proxyFetch(`${BASE_URL}/v2/devices`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!devRes.ok) return [];
@@ -98,7 +99,7 @@ export async function fetchLibreLinkUpReadings(): Promise<LibreLinkReading[]> {
 
     // Obtener lecturas del primer dispositivo
     const deviceId = devices[0].id;
-    const readRes = await fetch(
+    const readRes = await proxyFetch(
       `${BASE_URL}/v2/connections/${deviceId}/graph`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
