@@ -1,49 +1,65 @@
-import React, { useState } from 'react';
-import {
-  View, ScrollView, StyleSheet, TouchableOpacity, TextInput,
-  Text, Alert, Share, Platform, Modal,
-} from 'react-native';
-import { useDispatch, useSelector, useStore } from 'react-redux';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { APP_VERSION } from '@/constants/version';
 import { DyslexiaText } from '@/components/shared/DyslexiaText';
+import { NumberStepper } from '@/components/shared/NumberStepper';
+import { MODE_DESCRIPTIONS, MODE_EMOJIS, MODE_LABELS } from '@/constants/modeNavigationConfig';
+import { BORDER_RADIUS, SPACING } from '@/constants/theme';
+import { APP_VERSION } from '@/constants/version';
+import { useAppColors } from '@/hooks/useAppColors';
 import {
-  setUserName, setColorScheme, setDisplayMode, setAiEnabled, setCompanion, setAdultCompanion,
-  setGroqApiKey,
-  setNotifGlucose,
-  setNightscoutUrl, setNightscoutApiSecret,
-  setLibreLinkUpEmail, setDexcomShareUsername, setTidepoolEmail,
-  setGlucoseTargetLow, setGlucoseTargetHigh,
-  resetAllUserData,
-} from '@/store/slices/settingsSlice';
-import { persistor } from '@/store/store';
-import { clearManualGlucoseReadings } from '@/store/slices/healthSlice';
-import { setUserMode, setPendingModeIntro } from '@/store/slices/userModeSlice';
-import { MODE_LABELS, MODE_EMOJIS, MODE_DESCRIPTIONS } from '@/constants/modeNavigationConfig';
-import type { UserMode } from '@/store/slices/userModeSlice';
-import {
-  testNightscoutConnection,
-  saveNightscoutConfig,
-  clearNightscoutConfig,
-} from '@/services/nightscoutService';
-import {
-  loginLibreLinkOfficial,
-  clearLibreLinkOfficialSession,
-} from '@/services/libreLinkOfficialService';
-import {
-  loginDexcomShare,
   clearDexcomShareSession,
+  loginDexcomShare,
 } from '@/services/dexcomShareService';
 import {
-  loginTidepool,
+  clearLibreLinkOfficialSession,
+  loginLibreLinkOfficial,
+} from '@/services/libreLinkOfficialService';
+import {
+  clearNightscoutConfig,
+  saveNightscoutConfig,
+  testNightscoutConnection,
+} from '@/services/nightscoutService';
+import {
   clearTidepoolSession,
+  loginTidepool,
 } from '@/services/tidepoolService';
-import { validateHttpsUrl } from '@/utils/securityUtils';
-import { SPACING, BORDER_RADIUS } from '@/constants/theme';
-import { useAppColors } from '@/hooks/useAppColors';
-import { NumberStepper } from '@/components/shared/NumberStepper';
+import { clearManualGlucoseReadings } from '@/store/slices/healthSlice';
+import {
+  resetAllUserData,
+  setAdultCompanion,
+  setAiEnabled,
+  setColorScheme,
+  setDexcomShareUsername,
+  setDisplayMode,
+  setGlucoseTargetHigh,
+  setGlucoseTargetLow,
+  setGroqApiKey,
+  setLibreLinkUpEmail,
+  setNightscoutApiSecret,
+  setNightscoutUrl,
+  setNotifGlucose,
+  setTidepoolEmail,
+  setUserName
+} from '@/store/slices/settingsSlice';
+import type { UserMode } from '@/store/slices/userModeSlice';
+import { setPendingModeIntro, setUserMode } from '@/store/slices/userModeSlice';
 import type { RootState } from '@/store/store';
+import { persistor } from '@/store/store';
+import { validateHttpsUrl } from '@/utils/securityUtils';
+import { useRouter } from 'expo-router';
+import { useState } from 'react';
+import {
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 
 // ── helpers compartidos ───────────────────────────────────────────────────────
 

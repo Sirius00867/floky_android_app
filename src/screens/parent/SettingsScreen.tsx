@@ -816,9 +816,9 @@ export default function ParentSettingsScreen() {
         </View>
       </Modal>
 
-      {/* Modal de cambio de modo — animationType="slide" para compatibilidad web/nativo */}
-      <Modal visible={showModeModal} transparent animationType="slide" onRequestClose={() => setShowModeModal(false)}>
-        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 9999 }}>
+      {/* Modal de cambio de modo — funciona en web y nativo */}
+      <Modal visible={showModeModal} transparent animationType="fade" onRequestClose={() => setShowModeModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, gap: 12 }}>
             <DyslexiaText variant="h3" color={C.dark} style={{ fontWeight: '700', textAlign: 'center' }}>
               Cambiar modo

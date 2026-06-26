@@ -1,15 +1,19 @@
-import React, { useState, useRef } from 'react';
-import { Tabs, TabList, TabTrigger, TabSlot } from 'expo-router/ui';
-import { useRouter, usePathname } from 'expo-router';
+import { usePathname, useRouter } from 'expo-router';
+import { TabList, Tabs, TabSlot, TabTrigger } from 'expo-router/ui';
+import { useRef, useState } from 'react';
 import {
-  Pressable, View, StyleSheet, Text, Animated, TouchableOpacity,
+  Animated,
+  Pressable,
+  StyleSheet, Text,
+  TouchableOpacity,
   TouchableWithoutFeedback, useWindowDimensions,
+  View,
 } from 'react-native';
 import { useSelector } from 'react-redux';
 
-import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
-import { useAppColors } from '@/hooks/useAppColors';
 import { TAB_CONFIG } from '@/constants/modeNavigationConfig';
+import { BORDER_RADIUS, SPACING } from '@/constants/theme';
+import { useAppColors } from '@/hooks/useAppColors';
 import type { RootState } from '@/store/store';
 
 const SIDEBAR_W  = 220;

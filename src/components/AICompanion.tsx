@@ -1,17 +1,26 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  View, Text, Modal, TouchableOpacity, ScrollView, TextInput,
-  StyleSheet, Animated, Easing, Vibration, Platform, KeyboardAvoidingView,
-} from 'react-native';
-import { useSelector, useDispatch, useStore } from 'react-redux';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Notifications from 'expo-notifications';
-import { SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
+import { ConnectedAvatarController } from '@/components/avatar/AvatarController';
+import { BORDER_RADIUS, SHADOWS, SPACING } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
 import { setGroqApiKey } from '@/store/slices/settingsSlice';
 import type { RootState } from '@/store/store';
-import { ConnectedAvatarController } from '@/components/avatar/AvatarController';
 import { BloodGlucoseStatus, calcBloodGlucoseStatus } from '@/utils/avatarTypes';
+import * as Notifications from 'expo-notifications';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  Animated, Easing,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

@@ -10,11 +10,11 @@
  *  • Barra de estadísticas (Mín / Media / Máx / Lecturas)
  *  • Tiempo en Rango (TIR) en cabecera
  */
-import React, { useState } from 'react';
-import { View, TouchableOpacity, useWindowDimensions, Platform, type LayoutChangeEvent } from 'react-native';
-import { Svg, G, Path, Line, Circle, Text as SvgText, Rect, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { DyslexiaText } from './DyslexiaText';
 import type { AppColors } from '@/hooks/useAppColors';
+import React, { useState } from 'react';
+import { Platform, TouchableOpacity, useWindowDimensions, View, type LayoutChangeEvent } from 'react-native';
+import { Circle, Defs, G, Line, LinearGradient, Path, Rect, Stop, Svg, Text as SvgText } from 'react-native-svg';
+import { DyslexiaText } from './DyslexiaText';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 

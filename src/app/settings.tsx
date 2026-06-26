@@ -1,56 +1,75 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
-import {
-  View, ScrollView, StyleSheet, TouchableOpacity, TextInput,
-  Text, Modal, Alert, Share, Platform,
-} from 'react-native';
-import AdultSettingsScreen from '@/screens/adult/SettingsScreen';
-import ParentSettingsScreen from '@/screens/parent/SettingsScreen';
-import { useDispatch, useSelector, useStore } from 'react-redux';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+﻿import { DyslexiaText } from '@/components/shared/DyslexiaText';
+import { MODE_DESCRIPTIONS, MODE_EMOJIS, MODE_LABELS } from '@/constants/modeNavigationConfig';
+import { BORDER_RADIUS, SPACING } from '@/constants/theme';
 import { APP_VERSION } from '@/constants/version';
-import { DyslexiaText } from '@/components/shared/DyslexiaText';
-import {
-  setUserName,
-  addSubject, deleteSubject,
-  addRoutineTask, deleteRoutineTask,
-  setSettingsVisible, setColorScheme, setGroqApiKey, setAiEnabled, setCompanion, setAdolescentCompanion, setDisplayMode,
-  setNotifGlucose, setNotifStudy, setNotifRoutine, setGamificationEnabled,
-  setNightscoutUrl, setNightscoutApiSecret,
-  setLibreLinkUpEmail,
-  setDexcomShareUsername,
-  setTidepoolEmail,
-  setGlucoseTargetLow, setGlucoseTargetHigh,
-  resetAllUserData,
-  type Subject, type RoutineTask,
-} from '@/store/slices/settingsSlice';
-import { persistor } from '@/store/store';
-import { clearManualGlucoseReadings } from '@/store/slices/healthSlice';
-import { setUserMode, resetOnboarding, setPendingModeIntro } from '@/store/slices/userModeSlice';
-import { MODE_LABELS, MODE_EMOJIS, MODE_DESCRIPTIONS } from '@/constants/modeNavigationConfig';
-import type { UserMode } from '@/store/slices/userModeSlice';
-import {
-  testNightscoutConnection,
-  saveNightscoutConfig,
-  clearNightscoutConfig,
-} from '@/services/nightscoutService';
-import {
-  loginLibreLinkOfficial,
-  clearLibreLinkOfficialSession,
-} from '@/services/libreLinkOfficialService';
-import {
-  loginDexcomShare,
-  clearDexcomShareSession,
-} from '@/services/dexcomShareService';
-import {
-  loginTidepool,
-  clearTidepoolSession,
-} from '@/services/tidepoolService';
-import { validateHttpsUrl, sanitizeExternalUrl } from '@/utils/securityUtils';
-import { SPACING, BORDER_RADIUS, SHADOWS } from '@/constants/theme';
 import { useAppColors, type AppColors } from '@/hooks/useAppColors';
 import { useScreenLayout } from '@/hooks/useScreenLayout';
+import AdultSettingsScreen from '@/screens/adult/SettingsScreen';
+import ParentSettingsScreen from '@/screens/parent/SettingsScreen';
+import {
+  clearDexcomShareSession,
+  loginDexcomShare,
+} from '@/services/dexcomShareService';
+import {
+  clearLibreLinkOfficialSession,
+  loginLibreLinkOfficial,
+} from '@/services/libreLinkOfficialService';
+import {
+  clearNightscoutConfig,
+  saveNightscoutConfig,
+  testNightscoutConnection,
+} from '@/services/nightscoutService';
+import {
+  clearTidepoolSession,
+  loginTidepool,
+} from '@/services/tidepoolService';
+import { clearManualGlucoseReadings } from '@/store/slices/healthSlice';
+import {
+  addRoutineTask,
+  addSubject,
+  deleteRoutineTask,
+  deleteSubject,
+  resetAllUserData,
+  setAdolescentCompanion,
+  setAiEnabled,
+  setColorScheme,
+  setDexcomShareUsername,
+  setDisplayMode,
+  setGamificationEnabled,
+  setGlucoseTargetHigh,
+  setGlucoseTargetLow,
+  setGroqApiKey,
+  setLibreLinkUpEmail,
+  setNightscoutApiSecret,
+  setNightscoutUrl,
+  setNotifGlucose,
+  setNotifRoutine,
+  setNotifStudy,
+  setTidepoolEmail,
+  setUserName,
+  type RoutineTask
+} from '@/store/slices/settingsSlice';
+import type { UserMode } from '@/store/slices/userModeSlice';
+import { setPendingModeIntro, setUserMode } from '@/store/slices/userModeSlice';
 import type { RootState } from '@/store/store';
+import { persistor } from '@/store/store';
+import { sanitizeExternalUrl, validateHttpsUrl } from '@/utils/securityUtils';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Alert,
+  Modal,
+  Platform,
+  ScrollView,
+  Share,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDispatch, useSelector, useStore } from 'react-redux';
 
 const ROUTINE_LABELS: Record<RoutineTask['routineId'], string> = {
   morning:   '🌅 Mañana',

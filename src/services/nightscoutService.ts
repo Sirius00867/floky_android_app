@@ -1,7 +1,7 @@
 import { persistStorage } from '@/store/storage';
-import * as ExpoCrypto from 'expo-crypto';
-import { validateHttpsUrl, sanitizeExternalUrl, isCorsOrNetworkError, sanitizeError } from '@/utils/securityUtils';
 import { proxyFetch } from '@/utils/proxyFetch';
+import { isCorsOrNetworkError, sanitizeError, sanitizeExternalUrl, validateHttpsUrl } from '@/utils/securityUtils';
+import * as ExpoCrypto from 'expo-crypto';
 
 const STORAGE_KEY = 'nightscout_config';
 
