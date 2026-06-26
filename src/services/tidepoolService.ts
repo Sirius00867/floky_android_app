@@ -1,4 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '@/store/storage';
+import { proxyFetch } from '@/utils/proxyFetch';
 import {
   validateCredentials,
   sanitizeError,
@@ -42,16 +43,16 @@ export interface TidepoolInsulinDose {
 // ── Session ───────────────────────────────────────────────────────────────────
 
 async function saveSession(s: TidepoolSession) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  await persistStorage.setItem(STORAGE_KEY, JSON.stringify(s));
 }
 
 async function loadSession(): Promise<TidepoolSession | null> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await persistStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export async function clearTidepoolSession() {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await persistStorage.removeItem(STORAGE_KEY);
 }
 
 export async function isTidepoolConnected(): Promise<boolean> {
@@ -76,7 +77,7 @@ export async function loginTidepool(
 
   try {
     const credentials = btoa(`${email.trim()}:${password}`);
-    const res = await fetch(`${BASE_URL}/auth/login`, {
+    const res = await proxyFetch(`${BASE_URL}/auth/login`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${credentials}`,
@@ -131,7 +132,7 @@ export async function fetchTidepoolReadings(): Promise<TidepoolReading[]> {
       endDate: new Date().toISOString(),
     });
 
-    const res = await fetch(
+    const res = await proxyFetch(
       `${BASE_URL}/data/${session.userId}?${params}`,
       { headers: { 'x-tidepool-session-token': session.token } },
     );
@@ -176,7 +177,7 @@ export async function fetchTidepoolInsulin(): Promise<TidepoolInsulinDose[]> {
       endDate: new Date().toISOString(),
     });
 
-    const res = await fetch(
+    const res = await proxyFetch(
       `${BASE_URL}/data/${session.userId}?${params}`,
       { headers: { 'x-tidepool-session-token': session.token } },
     );

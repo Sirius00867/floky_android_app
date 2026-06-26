@@ -11,7 +11,7 @@
  *  • Tiempo en Rango (TIR) en cabecera
  */
 import React, { useState } from 'react';
-import { View, TouchableOpacity, useWindowDimensions } from 'react-native';
+import { View, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
 import { Svg, G, Path, Line, Circle, Text as SvgText, Rect, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { DyslexiaText } from './DyslexiaText';
 import type { AppColors } from '@/hooks/useAppColors';
@@ -259,7 +259,8 @@ export function GlucoseChart({
           </LinearGradient>
         </Defs>
 
-        <Rect x={0} y={0} width={W} height={H} fill="transparent" onPress={() => setSelected(null)} />
+        <Rect x={0} y={0} width={W} height={H} fill="transparent"
+          {...(Platform.OS !== 'web' ? { onPress: () => setSelected(null) } : {})} />
 
         {/* Cuadrícula */}
         {gridValues.map(v => {
@@ -412,7 +413,7 @@ export function GlucoseChart({
               )}
 
               <Circle cx={p.x} cy={p.y} r={22} fill="transparent"
-                onPress={() => setSelected(isSel ? null : p)} />
+                {...(Platform.OS !== 'web' ? { onPress: () => setSelected(isSel ? null : p) } : {})} />
             </G>
           );
         })}

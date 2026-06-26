@@ -45,6 +45,31 @@ export default function Root({ children }: PropsWithChildren) {
         {/* Evita el bounce / overscroll en iOS */}
         <ScrollViewStyleReset />
 
+        {/* Suprimir warnings conocidos de libs upstream antes de que React hidrate.
+            react-native-svg usa transform-origin (kebab) como atributo SVG válido
+            pero React 19 lo trata como prop DOM inválido y lanza console.error. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                var _origError = console.error.bind(console);
+                console.error = function() {
+                  var msg = typeof arguments[0] === 'string' ? arguments[0] : '';
+                  // Suprimir warnings de libs upstream incompatibles con React 19 DOM:
+                  // 1) react-native-svg: transform-origin como atributo SVG
+                  // 2) react-native-gesture-handler / PanResponder: onResponder* props
+                  // 3) react-native-reanimated: props de animación en elementos DOM
+                  if (msg.indexOf('Invalid DOM property') !== -1 ||
+                      msg.indexOf('Unknown event handler property') !== -1 ||
+                      msg.indexOf('transform-origin') !== -1 ||
+                      msg.indexOf('onResponder') !== -1) return;
+                  _origError.apply(console, arguments);
+                };
+              })();
+            `,
+          }}
+        />
+
         {/* Registro del Service Worker */}
         <script
           dangerouslySetInnerHTML={{

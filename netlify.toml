@@ -1,0 +1,90 @@
+[build]
+  base      = "Aplicacion"
+  command   = "npx expo export -p web && cp public/_redirects dist/_redirects"
+  publish   = "dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+[functions]
+  directory = "netlify/functions"
+
+# Headers de seguridad para la PWA
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options        = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy        = "strict-origin-when-cross-origin"
+    Permissions-Policy     = "camera=(), microphone=(), geolocation=()"
+
+# Cache largo para assets con hash (Expo genera nombres con hash)
+[[headers]]
+  for = "/_expo/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Sin caché para el HTML raíz (siempre fresco)
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+# ── Proxies CORS para servicios CGM ──────────────────────────────────────────
+# Nightscout — proxy dinámico vía Netlify Function (URL en header X-Nightscout-Target)
+[[redirects]]
+  from   = "/api/nightscout/*"
+  to     = "/.netlify/functions/nightscout-proxy"
+  status = 200
+  force  = true
+
+# Dexcom Share — EU (España/Europa)
+[[redirects]]
+  from   = "/api/dexcom/*"
+  to     = "https://shareous1.dexcom.com/:splat"
+  status = 200
+  force  = true
+
+# Dexcom Share — US
+[[redirects]]
+  from   = "/api/dexcom-us/*"
+  to     = "https://share1.dexcom.com/:splat"
+  status = 200
+  force  = true
+
+# FreeStyle LibreLink — EU
+[[redirects]]
+  from   = "/api/librelink/*"
+  to     = "https://api-eu.libreview.io/:splat"
+  status = 200
+  force  = true
+
+# FreeStyle LibreLink — US
+[[redirects]]
+  from   = "/api/librelink-us/*"
+  to     = "https://api.libreview.io/:splat"
+  status = 200
+  force  = true
+
+# Tidepool
+[[redirects]]
+  from   = "/api/tidepool/*"
+  to     = "https://api.tidepool.org/:splat"
+  status = 200
+  force  = true
+
+# ── SPA fallback — debe ir SIEMPRE al final ───────────────────────────────────
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

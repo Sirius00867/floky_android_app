@@ -1,4 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '@/store/storage';
+import { proxyFetch } from '@/utils/proxyFetch';
 import {
   validatePassword,
   sanitizeError,
@@ -33,16 +34,16 @@ export interface DexcomShareReading {
 // ── Persistencia ──────────────────────────────────────────────────────────────
 
 async function saveSession(session: DexcomShareSession) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  await persistStorage.setItem(STORAGE_KEY, JSON.stringify(session));
 }
 
 async function loadSession(): Promise<DexcomShareSession | null> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await persistStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export async function clearDexcomShareSession() {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await persistStorage.removeItem(STORAGE_KEY);
 }
 
 export async function isDexcomShareConnected(): Promise<boolean> {
@@ -65,7 +66,7 @@ async function attemptLogin(
   const timer = setTimeout(() => controller.abort(), LOGIN_TIMEOUT_MS);
 
   try {
-    const res = await fetch(
+    const res = await proxyFetch(
       `${base}/General/AuthenticatePublisherAccount`,
       {
         method:  'POST',
@@ -180,7 +181,7 @@ export async function fetchDexcomShareReadings(
       maxCount:  '288',
     });
 
-    const res = await fetch(
+    const res = await proxyFetch(
       `${base}/Publisher/ReadPublisherLatestGlucoseValues?${params}`,
     );
 

@@ -17,13 +17,15 @@ import { isConnected, loginWithDexcom, fetchTodayEGV, clearDexcomTokens } from '
 import {
   fetchNightscoutEntries,
   fetchNightscoutDeviceStatus,
+  saveNightscoutConfig,
+  loadNightscoutConfig,
   type NightscoutDeviceStatus,
 } from '@/services/nightscoutService';
 import {
   fetchLibreLinkOfficialReadings,
   type LibreLinkReading,
 } from '@/services/libreLinkOfficialService';
-import { fetchDexcomShareReadings, isDexcomShareConnected } from '@/services/dexcomShareService';
+import { fetchDexcomShareReadings } from '@/services/dexcomShareService';
 import {
   fetchTodayGlucoseReadings as fetchHealthKitReadings,
   isHealthKitAvailable,
@@ -59,18 +61,41 @@ export function useGlucoseData(): UseGlucoseDataReturn {
   // dexcomLinked persiste en Redux para que no se pierda entre remounts
   const dexcomLinked      = useSelector((s: RootState) => s.settings?.dexcomLinked ?? false);
 
-  const [cgmReadings,  setCgmReadings]  = useState<GlucoseReading[]>([]);
-  const [deviceStatus, setDeviceStatus] = useState<NightscoutDeviceStatus>({});
-  const [nsLastTrend,  setNsLastTrend]  = useState<string | undefined>();
-  const [isSyncing,    setIsSyncing]    = useState(false);
-  const [lastSynced,   setLastSynced]   = useState<Date | null>(null);
+  const [cgmReadings,    setCgmReadings]    = useState<GlucoseReading[]>([]);
+  const [deviceStatus,   setDeviceStatus]   = useState<NightscoutDeviceStatus>({});
+  const [nsLastTrend,    setNsLastTrend]    = useState<string | undefined>();
+  const [isSyncing,      setIsSyncing]      = useState(false);
+  const [lastSynced,     setLastSynced]     = useState<Date | null>(null);
+  // nightscoutApiSecret está blacklisted de Redux Persist — lo cargamos del
+  // almacenamiento propio del servicio para que sobreviva reinicios.
+  const [storedNsSecret, setStoredNsSecret] = useState('');
+
+  // Carga la secret desde AsyncStorage al montar (por si Redux quedó vacío tras reinicio)
+  useEffect(() => {
+    loadNightscoutConfig().then(cfg => {
+      if (cfg?.apiSecret) setStoredNsSecret(cfg.apiSecret);
+    });
+  }, []);
+
+  // Cuando el usuario guarda nueva configuración en Settings, persistirla también
+  // en el almacenamiento del servicio para el próximo reinicio.
+  useEffect(() => {
+    if (nightscoutUrl && nightscoutSecret) {
+      saveNightscoutConfig({ url: nightscoutUrl, apiSecret: nightscoutSecret });
+      setStoredNsSecret(nightscoutSecret);
+    }
+  }, [nightscoutUrl, nightscoutSecret]);
+
+  // La secret efectiva: preferir la de Redux (recién introducida); si está vacía
+  // (tras reinicio) usar la que cargamos de AsyncStorage.
+  const effectiveNsSecret = nightscoutSecret || storedNsSecret;
 
   const loadNightscoutData = useCallback(async () => {
-    if (!nightscoutUrl || !nightscoutSecret) return;
+    if (!nightscoutUrl || !effectiveNsSecret) return;
     try {
       const [entries, status] = await Promise.all([
-        fetchNightscoutEntries(nightscoutUrl, nightscoutSecret),
-        fetchNightscoutDeviceStatus(nightscoutUrl, nightscoutSecret),
+        fetchNightscoutEntries(nightscoutUrl, effectiveNsSecret),
+        fetchNightscoutDeviceStatus(nightscoutUrl, effectiveNsSecret),
       ]);
       if (entries.length > 0) {
         const mapped: GlucoseReading[] = entries.map(e => ({
@@ -78,26 +103,31 @@ export function useGlucoseData(): UseGlucoseDataReturn {
           timestamp: new Date(e.date).toISOString(),
           source:    'Nightscout',
         }));
-        setCgmReadings(prev => [...prev.filter(r => r.source !== 'Nightscout'), ...mapped]);
+        // Solo Redux — evita duplicados en allReadings (readings ya incluye estos vía Redux)
         dispatch(bulkSetCgmReadings({ source: 'Nightscout', readings: mapped }));
         setNsLastTrend(entries[0]?.direction);
       }
       setDeviceStatus(status);
     } catch { /* silencioso */ }
-  }, [nightscoutUrl, nightscoutSecret, dispatch]);
+  }, [nightscoutUrl, effectiveNsSecret, dispatch]);
 
   const refreshAll = useCallback(async () => {
     setIsSyncing(true);
     try {
-      // Health Connect (Android)
+      // Health Connect (Android) — solo estado local (no va a Redux)
       try {
         const hcData = await fetchTodayGlucoseReadings();
-        setCgmReadings(hcData.map(r => ({
+        const mapped = hcData.map(r => ({
           value:     r.value,
           timestamp: new Date(r.timestamp).toISOString(),
           source:    `CGM (${r.source})`,
-        })));
-      } catch { /* no disponible en web */ }
+        }));
+        // Merge: mantener otras fuentes, reemplazar solo las de Health Connect
+        setCgmReadings(prev => [
+          ...prev.filter(r => !r.source.startsWith('CGM (')),
+          ...mapped,
+        ]);
+      } catch { /* no disponible en web/iOS */ }
 
       // Dexcom OAuth
       const linked = await isConnected();
@@ -127,7 +157,7 @@ export function useGlucoseData(): UseGlucoseDataReturn {
               timestamp: new Date(r.timestamp).toISOString(),
               source:    'FreeStyle Libre',
             }));
-            setCgmReadings(prev => [...prev.filter(r => !r.source.includes('FreeStyle')), ...mapped]);
+            // Solo Redux — evita duplicados en allReadings
             dispatch(bulkSetCgmReadings({ source: 'FreeStyle Libre', readings: mapped }));
           }
         } catch { /* silencioso */ }
@@ -143,7 +173,7 @@ export function useGlucoseData(): UseGlucoseDataReturn {
               timestamp: new Date(r.timestamp).toISOString(),
               source:    'Dexcom Share',
             }));
-            setCgmReadings(prev => [...prev.filter(r => r.source !== 'Dexcom Share'), ...mapped]);
+            // Solo Redux — evita duplicados en allReadings
             dispatch(bulkSetCgmReadings({ source: 'Dexcom Share', readings: mapped }));
           }
         } catch { /* silencioso */ }
@@ -175,7 +205,7 @@ export function useGlucoseData(): UseGlucoseDataReturn {
               timestamp: new Date(r.timestamp).toISOString(),
               source:    r.source,
             }));
-            setCgmReadings(prev => [...prev.filter(r => !r.source.includes('Tidepool')), ...mapped]);
+            dispatch(bulkSetCgmReadings({ source: 'Tidepool', readings: mapped }));
           }
         } catch { /* silencioso */ }
       }
@@ -184,7 +214,7 @@ export function useGlucoseData(): UseGlucoseDataReturn {
     } finally {
       setIsSyncing(false);
     }
-  }, [nightscoutUrl, nightscoutSecret, libreLinkUpEmail, dexcomShareUser, tidepoolEmail,
+  }, [nightscoutUrl, effectiveNsSecret, libreLinkUpEmail, dexcomShareUser, tidepoolEmail,
       loadNightscoutData, dispatch]);
 
   // Carga inicial + polling cada 5 min
@@ -196,10 +226,10 @@ export function useGlucoseData(): UseGlucoseDataReturn {
 
   // Polling rápido de Nightscout cada 60 s
   useEffect(() => {
-    if (!nightscoutUrl || !nightscoutSecret) return;
+    if (!nightscoutUrl || !effectiveNsSecret) return;
     const interval = setInterval(loadNightscoutData, 60 * 1000);
     return () => clearInterval(interval);
-  }, [nightscoutUrl, nightscoutSecret, loadNightscoutData]);
+  }, [nightscoutUrl, effectiveNsSecret, loadNightscoutData]);
 
   const handleDexcomConnect = useCallback(async (): Promise<boolean> => {
     const ok = await loginWithDexcom();

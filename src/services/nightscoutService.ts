@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '@/store/storage';
 import * as ExpoCrypto from 'expo-crypto';
 import { validateHttpsUrl, sanitizeExternalUrl, isCorsOrNetworkError, sanitizeError } from '@/utils/securityUtils';
 
@@ -79,23 +79,50 @@ async function sha1hex(text: string): Promise<string> {
 // ── Persistencia ──────────────────────────────────────────────────────────────
 
 export async function saveNightscoutConfig(config: NightscoutConfig) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  await persistStorage.setItem(STORAGE_KEY, JSON.stringify(config));
 }
 
 export async function loadNightscoutConfig(): Promise<NightscoutConfig | null> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await persistStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export async function clearNightscoutConfig() {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await persistStorage.removeItem(STORAGE_KEY);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function cleanUrl(url: string) {
-  // sanitizeExternalUrl ya normaliza protocolo + barra final; cleanUrl es por compatibilidad
   return sanitizeExternalUrl(url);
+}
+
+function isBrowser(): boolean {
+  return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+}
+
+/**
+ * Wrapper de fetch específico para Nightscout.
+ *
+ * En web (PWA/Netlify): la petición va a /api/nightscout<path> y Netlify la
+ * redirige a la Netlify Function nightscout-proxy.js, que lee el servidor real
+ * del header X-Nightscout-Target. De este modo la URL del usuario nunca se
+ * hardcodea en _redirects y funciona para cualquier servidor Nightscout.
+ *
+ * En nativo (iOS/Android): llama directamente al servidor sin CORS.
+ */
+function nsProxyFetch(
+  nsUrl: string,
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const cleanedBase = cleanUrl(nsUrl);
+  if (isBrowser()) {
+    const headers = new Headers(init.headers as HeadersInit | undefined);
+    headers.set('X-Nightscout-Target', cleanedBase);
+    return fetch(`/api/nightscout${path}`, { ...init, headers });
+  }
+  return fetch(`${cleanedBase}${path}`, init);
 }
 
 async function buildHeaders(apiSecret: string): Promise<Record<string, string>> {
@@ -126,10 +153,10 @@ export async function testNightscoutConnection(
   const secretTrimmed = apiSecret.trim();
 
   try {
-    // 1. Ping sin auth para detectar CORS antes del SHA-1
+    // 1. Ping sin auth para detectar errores de red/URL antes del SHA-1
     let pingRes: Response | null = null;
     try {
-      pingRes = await fetch(`${base}/api/v1/status.json`);
+      pingRes = await nsProxyFetch(base, '/api/v1/status.json');
     } catch (pingErr) {
       if (isCorsOrNetworkError(pingErr)) {
         return {
@@ -154,7 +181,7 @@ export async function testNightscoutConnection(
 
     let res: Response;
     try {
-      res = await fetch(`${base}/api/v1/status.json`, { headers });
+      res = await nsProxyFetch(base, '/api/v1/status.json', { headers });
     } catch (authErr) {
       if (isCorsOrNetworkError(authErr)) {
         return {
@@ -206,7 +233,7 @@ export async function fetchNightscoutEntries(
       count: count.toString(),
       'find[dateString][$gte]': todayMidnightIso(),
     });
-    const res = await fetch(`${cleanUrl(url)}/api/v1/entries.json?${params}`, { headers });
+    const res = await nsProxyFetch(url, `/api/v1/entries.json?${params}`, { headers });
     if (!res.ok) return [];
     const data: NightscoutEntry[] = await res.json();
     return data.filter(e => e.sgv > 0);
@@ -221,7 +248,7 @@ export async function fetchNightscoutCurrent(
 ): Promise<NightscoutEntry | null> {
   try {
     const headers = await buildHeaders(apiSecret);
-    const res = await fetch(`${cleanUrl(url)}/api/v1/entries/current.json`, { headers });
+    const res = await nsProxyFetch(url, '/api/v1/entries/current.json', { headers });
     if (!res.ok) return null;
     const data = await res.json();
     const entry: NightscoutEntry = Array.isArray(data) ? data[0] : data;
@@ -242,7 +269,7 @@ export async function fetchNightscoutTreatments(
       count: count.toString(),
       'find[created_at][$gte]': todayMidnightIso(),
     });
-    const res = await fetch(`${cleanUrl(url)}/api/v1/treatments.json?${params}`, { headers });
+    const res = await nsProxyFetch(url, `/api/v1/treatments.json?${params}`, { headers });
     if (!res.ok) return [];
     return await res.json();
   } catch {
@@ -262,8 +289,9 @@ export async function fetchNightscoutDeviceStatus(
       'Pragma': 'no-cache',
     };
     // _ts rompe cualquier caché a nivel CDN o proxy
-    const res = await fetch(
-      `${cleanUrl(url)}/api/v1/devicestatus.json?count=1&_ts=${Date.now()}`,
+    const res = await nsProxyFetch(
+      url,
+      `/api/v1/devicestatus.json?count=1&_ts=${Date.now()}`,
       { headers, cache: 'no-store' as RequestCache },
     );
     if (!res.ok) return {};

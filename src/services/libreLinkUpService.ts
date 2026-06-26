@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '@/store/storage';
 
 const STORAGE_KEY = 'librelink_tokens';
 const BASE_URL = 'https://api.librelink.io';
@@ -17,16 +17,16 @@ export interface LibreLinkReading {
 // ── Token storage ─────────────────────────────────────────────────────────
 
 async function saveTokens(tokens: LibreLinkTokens) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
+  await persistStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
 }
 
 async function loadTokens(): Promise<LibreLinkTokens | null> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await persistStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export async function clearLibreLinkUpTokens() {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await persistStorage.removeItem(STORAGE_KEY);
 }
 
 // ── Login ─────────────────────────────────────────────────────────────────

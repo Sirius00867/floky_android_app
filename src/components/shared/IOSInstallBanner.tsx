@@ -43,7 +43,7 @@ export function IOSInstallBanner() {
         toValue: 0,
         friction: 8,
         tension: 60,
-        useNativeDriver: true,
+        useNativeDriver: Platform.OS !== 'web',
       }).start();
     }, 2500);
     return () => clearTimeout(timer);
@@ -53,7 +53,7 @@ export function IOSInstallBanner() {
     Animated.timing(slideAnim, {
       toValue: 120,
       duration: 220,
-      useNativeDriver: true,
+      useNativeDriver: Platform.OS !== 'web',
     }).start(() => {
       setVisible(false);
       try {

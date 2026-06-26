@@ -133,7 +133,7 @@ function SunflowerFace({ mood, faceR }: { mood: Mood; faceR: number }) {
   const cy = faceR;
 
   return (
-    <View pointerEvents="none" style={{ position: 'absolute', width: faceR * 2, height: faceR * 2, left: 0, top: 0 }}>
+    <View style={{ position: 'absolute', width: faceR * 2, height: faceR * 2, left: 0, top: 0, pointerEvents: 'none' }}>
 
       {/* ── LEFT eyebrow ── */}
       <Animated.View style={{

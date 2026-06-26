@@ -1,8 +1,8 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '@/store/store';
 import { setLiveCgmReading, setCgmSyncing } from '@/store/slices/healthSlice';
-import { fetchNightscoutEntries } from '@/services/nightscoutService';
+import { fetchNightscoutEntries, loadNightscoutConfig } from '@/services/nightscoutService';
 import { fetchLibreLinkUpCurrent } from '@/services/libreLinkUpService';
 import { fetchDexcomShareReadings } from '@/services/dexcomShareService';
 
@@ -25,11 +25,20 @@ function trendArrow(direction?: string): string {
 }
 
 export function useGlucoseSync() {
-  const dispatch       = useDispatch();
+  const dispatch         = useDispatch();
   const nightscoutUrl    = useSelector((s: RootState) => s.settings?.nightscoutUrl ?? '');
   const nightscoutSecret = useSelector((s: RootState) => s.settings?.nightscoutApiSecret ?? '');
   const libreLinkUpEmail = useSelector((s: RootState) => s.settings?.libreLinkUpEmail ?? '');
   const dexcomShareUser  = useSelector((s: RootState) => s.settings?.dexcomShareUsername ?? '');
+
+  // nightscoutApiSecret está blacklisted de Redux Persist — fallback desde AsyncStorage
+  const [storedNsSecret, setStoredNsSecret] = useState('');
+  useEffect(() => {
+    loadNightscoutConfig().then(cfg => {
+      if (cfg?.apiSecret) setStoredNsSecret(cfg.apiSecret);
+    });
+  }, []);
+  const effectiveNsSecret = nightscoutSecret || storedNsSecret;
 
   const hasAnyService = !!(nightscoutUrl || libreLinkUpEmail || dexcomShareUser);
 
@@ -39,9 +48,9 @@ export function useGlucoseSync() {
 
     try {
       // Prioridad: Nightscout > LibreLinkUp > Dexcom Share
-      if (nightscoutUrl && nightscoutSecret) {
+      if (nightscoutUrl && effectiveNsSecret) {
         try {
-          const entries = await fetchNightscoutEntries(nightscoutUrl, nightscoutSecret, 1);
+          const entries = await fetchNightscoutEntries(nightscoutUrl, effectiveNsSecret, 1);
           if (entries.length > 0) {
             const e = entries[0];
             dispatch(setLiveCgmReading({
@@ -86,7 +95,7 @@ export function useGlucoseSync() {
     } finally {
       dispatch(setCgmSyncing(false));
     }
-  }, [nightscoutUrl, nightscoutSecret, libreLinkUpEmail, dexcomShareUser, hasAnyService, dispatch]);
+  }, [nightscoutUrl, effectiveNsSecret, libreLinkUpEmail, dexcomShareUser, hasAnyService, dispatch]);
 
   useEffect(() => {
     sync();

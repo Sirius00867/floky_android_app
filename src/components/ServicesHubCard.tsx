@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSelector } from 'react-redux';
 import { DyslexiaText } from '@/components/shared/DyslexiaText';
 import { useAppColors } from '@/hooks/useAppColors';
 import { SPACING, BORDER_RADIUS } from '@/constants/theme';
+import { loadNightscoutConfig } from '@/services/nightscoutService';
 import type { RootState } from '@/store/store';
 
 interface ServiceRow {
@@ -37,7 +38,13 @@ export function ServicesHubCard({ liveValues = {}, isSyncing = false, lastSynced
   const dexcomShareUser    = useSelector((s: RootState) => s.settings?.dexcomShareUsername ?? '');
   const dexcomLinked       = useSelector((s: RootState) => s.settings?.dexcomLinked ?? false);
 
-  const nightscoutOk = !!(nightscoutUrl && nightscoutSecret);
+  // nightscoutApiSecret está blacklisted de Redux Persist — leer desde AsyncStorage como fallback
+  const [storedNsOk, setStoredNsOk] = useState(false);
+  useEffect(() => {
+    loadNightscoutConfig().then(cfg => setStoredNsOk(!!(cfg?.url && cfg?.apiSecret)));
+  }, []);
+
+  const nightscoutOk = !!(nightscoutUrl && nightscoutSecret) || storedNsOk;
 
   const services: ServiceRow[] = [
     {

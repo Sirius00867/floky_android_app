@@ -30,7 +30,7 @@ export function HidableSection({ screen, sectionId, label, children }: Props) {
       {children}
 
       {/* Botón ocultar — posición absoluta en esquina superior derecha para no duplicarse en el layout */}
-      <View style={styles.hideBar} pointerEvents="box-none">
+      <View style={[styles.hideBar, { pointerEvents: 'box-none' }]}>
         <TouchableOpacity
           onPress={handleHide}
           style={[styles.hideBtn, { borderColor: C.cardBorder, backgroundColor: C.card }]}

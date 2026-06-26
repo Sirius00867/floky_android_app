@@ -1,6 +1,6 @@
 import * as AuthSession from 'expo-auth-session';
 import * as Crypto from 'expo-crypto';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { persistStorage } from '@/store/storage';
 
 const IS_SANDBOX = process.env.EXPO_PUBLIC_DEXCOM_SANDBOX === 'true';
 const BASE_URL    = IS_SANDBOX ? 'https://sandbox-api.dexcom.com' : 'https://api.dexcom.com';
@@ -28,16 +28,16 @@ interface EGVRecord {
 // ── Token storage ─────────────────────────────────────────────────────────────
 
 async function saveTokens(tokens: DexcomTokens) {
-  await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
+  await persistStorage.setItem(STORAGE_KEY, JSON.stringify(tokens));
 }
 
 async function loadTokens(): Promise<DexcomTokens | null> {
-  const raw = await AsyncStorage.getItem(STORAGE_KEY);
+  const raw = await persistStorage.getItem(STORAGE_KEY);
   return raw ? JSON.parse(raw) : null;
 }
 
 export async function clearDexcomTokens() {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await persistStorage.removeItem(STORAGE_KEY);
 }
 
 // ── OAuth2 login ──────────────────────────────────────────────────────────────
@@ -49,7 +49,7 @@ export async function loginWithDexcom(): Promise<boolean> {
   const request = new AuthSession.AuthRequest({
     clientId:            CLIENT_ID,
     redirectUri:         REDIRECT_URI,
-    scopes:              ['offline_access'],
+    scopes:              ['offline_access', 'egvs'],
     responseType:        AuthSession.ResponseType.Code,
     codeChallengeMethod: AuthSession.CodeChallengeMethod.S256,
     codeChallenge,

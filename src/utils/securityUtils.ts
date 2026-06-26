@@ -43,13 +43,16 @@ export function validateHttpsUrl(raw: string): { ok: true; url: string } | { ok:
  */
 export function isCorsOrNetworkError(e: unknown): boolean {
   if (typeof e !== 'object' || e === null) return false;
-  const msg = (e as Error).message ?? '';
+  const msg = ((e as Error).message ?? '').toLowerCase();
+  const name = (e as Error).name ?? '';
   // Chrome: "Failed to fetch" / Firefox: "NetworkError when attempting to fetch resource."
+  // React Native: "Network request failed" (TypeError)
   return (
-    msg.includes('Failed to fetch') ||
-    msg.includes('NetworkError') ||
-    msg.includes('fetch') && msg.includes('network') ||
-    (e as Error).name === 'TypeError'
+    msg.includes('failed to fetch') ||
+    msg.includes('networkerror') ||
+    msg.includes('network request failed') ||
+    (name === 'AbortError') ||
+    (name === 'TypeError' && (msg.includes('fetch') || msg.includes('network') || msg.includes('load')))
   );
 }
 

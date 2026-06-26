@@ -1,4 +1,5 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
+import '@/web-compat'; // filtro upstream warnings React 19 + RN Web — debe ser el primer import
+import { DarkTheme, DefaultTheme, ThemeProvider, useRouter } from 'expo-router';
 import { Provider, useSelector, useDispatch } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 import { View } from 'react-native';
@@ -21,6 +22,7 @@ import type { UserMode } from '@/store/slices/userModeSlice';
 
 function ThemedApp() {
   const dispatch            = useDispatch();
+  const router              = useRouter();
   const scheme              = useSelector((s: RootState) => s.settings?.colorScheme ?? 'light');
   const isFirst             = useSelector((s: RootState) => s.settings?.isFirstLaunch ?? true);
   const notifGlucose        = useSelector((s: RootState) => s.settings?.notifGlucose ?? true);
@@ -54,7 +56,10 @@ function ThemedApp() {
     return (
       <ModeIntroScreen
         mode={pendingModeIntro as UserMode}
-        onDone={() => dispatch(markModeIntroSeen(pendingModeIntro as UserMode))}
+        onDone={() => {
+          dispatch(markModeIntroSeen(pendingModeIntro as UserMode));
+          router.replace('/');
+        }}
       />
     );
   }

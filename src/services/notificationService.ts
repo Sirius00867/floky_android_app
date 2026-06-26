@@ -32,15 +32,17 @@ const ROUTINE_SCHEDULE = [
   { id: 'routine-evening',   hour: 20, minute: 30, title: '🌙 Rutina de noche',   body: 'Última revisión del día. Prepara el mañana.' },
 ];
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+if (Platform.OS !== 'web') {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 export async function requestNotificationPermission(): Promise<boolean> {
   if (Platform.OS === 'web') return false;
@@ -51,6 +53,7 @@ export async function requestNotificationPermission(): Promise<boolean> {
 }
 
 async function cancelByIds(ids: string[]) {
+  if (Platform.OS === 'web') return;
   for (const id of ids) {
     try { await Notifications.cancelScheduledNotificationAsync(id); } catch { /* already gone */ }
   }

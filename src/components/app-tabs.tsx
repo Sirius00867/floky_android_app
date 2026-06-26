@@ -66,9 +66,11 @@ function AppTabs() {
     setModePickerOpen(false);
     if (mode === currentMode) return;
     dispatch(setUserMode(mode));
-    // Solo muestra intro si aún no se ha visto para ese modo
     if (!seenModeIntros.includes(mode)) {
       dispatch(setPendingModeIntro(mode));
+    } else {
+      // Intro ya vista: navegar al inicio del nuevo modo directamente
+      router.replace('/');
     }
   };
 
@@ -92,7 +94,7 @@ function AppTabs() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   return (
-    <Tabs>
+    <Tabs key={currentMode}>
       {/* TabList oculto — registra rutas */}
       <TabList asChild>
         <View style={styles.hidden}>
