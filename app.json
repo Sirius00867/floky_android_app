@@ -48,7 +48,7 @@
       ]
     },
     "web": {
-      "output": "server",
+      "output": "static",
       "favicon": "./assets/images/favicon.png",
       "name": "Floky",
       "shortName": "Floky",
