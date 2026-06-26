@@ -197,7 +197,10 @@ export function GlucoseChart({
   const showLabels = visiblePts.length <= 10;
 
   return (
-    <View onLayout={(e: LayoutChangeEvent) => setContainerW(e.nativeEvent.layout.width)}>
+    <View
+      onLayout={(e: LayoutChangeEvent) => setContainerW(e.nativeEvent.layout.width)}
+      style={{ overflow: 'hidden', width: '100%' }}
+    >
       {/* ── CABECERA ── */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
         <View>

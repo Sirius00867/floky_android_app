@@ -142,7 +142,7 @@ function AdolescentHealthScreen() {
   const styles = makeStyles(C);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.md }]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 56 }]}>
       <View style={styles.screenHeader}>
         <View style={styles.headerLeft}>
           <View style={[styles.headerIcon, { backgroundColor: C.health + '18' }]}>

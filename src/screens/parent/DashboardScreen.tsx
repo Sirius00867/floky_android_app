@@ -44,10 +44,12 @@ export default function ParentDashboardScreen() {
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
-      <Text style={[styles.title, { color: C.dark }]}>Seguimiento de {userName}</Text>
-      <Text style={[styles.subtitle, { color: C.darkTertiary }]}>
-        {today.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
-      </Text>
+      <View style={{ paddingLeft: 110 }}>
+        <Text style={[styles.title, { color: C.dark }]}>Seguimiento de {userName}</Text>
+        <Text style={[styles.subtitle, { color: C.darkTertiary }]}>
+          {today.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
+        </Text>
+      </View>
 
       {/* Estado principal */}
       <View style={[styles.statusCard, { backgroundColor: C.white, borderColor: status?.color ?? C.border, borderWidth: 2 }]}>

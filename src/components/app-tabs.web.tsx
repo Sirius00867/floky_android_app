@@ -9,6 +9,7 @@ import {
   TouchableWithoutFeedback, useWindowDimensions,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 
 import { TAB_CONFIG } from '@/constants/modeNavigationConfig';
@@ -26,6 +27,7 @@ export default function AppTabs() {
   const router   = useRouter();
   const pathname = usePathname();
   const { width } = useWindowDimensions();
+  const insets   = useSafeAreaInsets();
 
   const isMobile = width < MOBILE_BP;
 
@@ -183,9 +185,9 @@ export default function AppTabs() {
         {/* Contenido a pantalla completa */}
         <TabSlot style={{ flex: 1 }} />
 
-        {/* Botón hamburguesa flotante */}
+        {/* Botón hamburguesa flotante — top adapta a Notch/Dynamic Island */}
         <TouchableOpacity
-          style={[styles.menuBtn, { backgroundColor: isDark ? 'rgba(25,25,25,0.92)' : 'rgba(255,255,255,0.92)' }]}
+          style={[styles.menuBtn, { top: insets.top + 8, backgroundColor: isDark ? 'rgba(25,25,25,0.92)' : 'rgba(255,255,255,0.92)' }]}
           onPress={openDrawer}
           activeOpacity={0.8}
           accessibilityLabel="Abrir menú de navegación"
@@ -210,8 +212,8 @@ export default function AppTabs() {
               { backgroundColor: sidebarBg, borderRightColor: borderColor, transform: [{ translateX }] },
             ]}
           >
-            {/* Header */}
-            <View style={[styles.drawerHeader, { borderBottomColor: borderColor }]}>
+            {/* Header — paddingTop adapta a safe area (Notch/Dynamic Island) */}
+            <View style={[styles.drawerHeader, { borderBottomColor: borderColor, paddingTop: insets.top + 12 }]}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.appName, { color: textActive }]}>floky</Text>
                 <Text style={[styles.appSub, { color: textMuted }]}>Tu espacio</Text>
@@ -415,7 +417,7 @@ const styles = StyleSheet.create({
   // ── Drawer mobile ────────────────────────────────────────────────────────
   menuBtn: {
     position: 'absolute',
-    top: 52,
+    // top se inyecta dinámicamente como { top: insets.top + 8 }
     left: 16,
     flexDirection: 'row',
     alignItems: 'center',
@@ -458,11 +460,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingTop: 56,
     paddingBottom: SPACING.md,
     borderBottomWidth: 1,
     gap: SPACING.sm,
-    minHeight: 100,
+    minHeight: 72,
   },
   closeBtn: {
     width: 32,

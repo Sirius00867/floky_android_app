@@ -443,7 +443,7 @@ export default function SettingsScreen() {
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
         ref={scrollRef}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 56 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}

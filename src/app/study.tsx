@@ -192,7 +192,7 @@ function AdolescentStudyScreen() {
     <>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 56 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>

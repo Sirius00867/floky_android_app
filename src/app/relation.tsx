@@ -53,7 +53,7 @@ function AdolescentRelationScreen() {
   const styles = makeStyles(C);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.md }]}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 56 }]}>
       <DyslexiaText variant="h2" color={C.dark}>💬 Relación</DyslexiaText>
 
       <View style={styles.card}>

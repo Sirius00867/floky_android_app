@@ -108,7 +108,7 @@ function AdolescentDashboard() {
     <>
       <ScrollView
         style={styles.container}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + SPACING.sm }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 56 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header: fila superior con puntos + editar alineados a la derecha */}

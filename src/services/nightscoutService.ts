@@ -1,5 +1,5 @@
 import { persistStorage } from '@/store/storage';
-import { proxyFetch } from '@/utils/proxyFetch';
+import { proxyFetch, isBrowser } from '@/utils/proxyFetch';
 import { isCorsOrNetworkError, sanitizeError, sanitizeExternalUrl, validateHttpsUrl } from '@/utils/securityUtils';
 import * as ExpoCrypto from 'expo-crypto';
 
@@ -137,6 +137,10 @@ export async function testNightscoutConnection(
   const base = cleanUrl(urlCheck.url);
   const secretTrimmed = apiSecret.trim();
 
+  const networkHint = isBrowser()
+    ? ' Asegúrate de que el servidor Nightscout tiene los permisos CORS habilitados o comprueba la URL introducida.'
+    : ' Comprueba que la URL es correcta y que tienes conexión a Internet.';
+
   try {
     // 1. Ping sin auth para detectar errores de red/URL antes del SHA-1
     let pingRes: Response | null = null;
@@ -146,8 +150,8 @@ export async function testNightscoutConnection(
       if (isCorsOrNetworkError(pingErr)) {
         return {
           ok: false,
-          errorCode: 'cors',
-          error: '❌ Error de conexión. Asegúrate de que el servidor Nightscout tiene los permisos CORS habilitados o comprueba la URL introducida.',
+          errorCode: isBrowser() ? 'cors' : 'network',
+          error: `❌ Error de conexión.${networkHint}`,
         };
       }
       return { ok: false, errorCode: 'network', error: 'No se puede conectar al servidor. Comprueba la URL.' };
@@ -171,8 +175,8 @@ export async function testNightscoutConnection(
       if (isCorsOrNetworkError(authErr)) {
         return {
           ok: false,
-          errorCode: 'cors',
-          error: '❌ Error de conexión. Asegúrate de que el servidor Nightscout tiene los permisos CORS habilitados o comprueba la URL introducida.',
+          errorCode: isBrowser() ? 'cors' : 'network',
+          error: `❌ Error de conexión.${networkHint}`,
         };
       }
       return { ok: false, errorCode: 'network', error: sanitizeError(authErr) };
@@ -198,8 +202,8 @@ export async function testNightscoutConnection(
     if (isCorsOrNetworkError(e)) {
       return {
         ok: false,
-        errorCode: 'cors',
-        error: '❌ Error de conexión. Asegúrate de que el servidor Nightscout tiene los permisos CORS habilitados o comprueba la URL introducida.',
+        errorCode: isBrowser() ? 'cors' : 'network',
+        error: `❌ Error de conexión.${networkHint}`,
       };
     }
     return { ok: false, errorCode: 'network', error: sanitizeError(e) };

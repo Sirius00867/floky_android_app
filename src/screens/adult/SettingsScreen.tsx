@@ -261,7 +261,7 @@ export default function AdultSettingsScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView
-        contentContainerStyle={[s.content, { paddingTop: insets.top + SPACING.sm }]}
+        contentContainerStyle={[s.content, { paddingTop: insets.top + 56 }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}

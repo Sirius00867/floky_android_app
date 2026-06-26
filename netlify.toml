@@ -1,0 +1,15 @@
+[build]
+  base    = "."
+  command = "npx expo export --platform web"
+  publish = "dist"
+
+[build.environment]
+  # El proxy CORS se antepone a la URL destino (corsproxy.io es público; considera tu propio Worker en producción real)
+  EXPO_PUBLIC_CORS_PROXY_URL = "https://corsproxy.io/?"
+  NODE_VERSION = "20"
+
+# SPA redirect: toda URL que no sea un asset estático sirve index.html
+[[redirects]]
+  from   = "/*"
+  to     = "/index.html"
+  status = 200

@@ -141,8 +141,8 @@ function AppTabs() {
             { backgroundColor: drawerBg, borderRightColor: borderColor, transform: [{ translateX }] },
           ]}
         >
-          {/* Header del drawer */}
-          <View style={[styles.drawerHeader, { borderBottomColor: borderColor }]}>
+          {/* Header del drawer — paddingTop adapta a safe area (Notch/Dynamic Island) */}
+          <View style={[styles.drawerHeader, { borderBottomColor: borderColor, paddingTop: insets.top + 12 }]}>
             <Text style={[styles.drawerTitle, { color: textActive }]}>floky</Text>
             <Text style={[styles.drawerSub, { color: textMuted }]}>
               {MODE_EMOJIS[currentMode]} {MODE_LABELS[currentMode]}
@@ -338,7 +338,6 @@ const styles = StyleSheet.create({
   },
   drawerHeader: {
     paddingHorizontal: SPACING.md,
-    paddingTop: 56,
     paddingBottom: SPACING.md,
     borderBottomWidth: 1,
     gap: 2,
@@ -353,7 +352,7 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     position: 'absolute',
-    top: 52,
+    top: 12,
     right: SPACING.md,
     width: 32,
     height: 32,

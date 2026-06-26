@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View, Text, ScrollView, StyleSheet, TouchableOpacity,
 } from 'react-native';
+// layout-fix: header paddingLeft clears floky button
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSelector } from 'react-redux';
 import { useRouter } from 'expo-router';
@@ -132,7 +133,7 @@ export default function AdultDashboardScreen() {
 const styles = StyleSheet.create({
   scroll:       { flex: 1 },
   content:      { padding: SPACING.md, gap: SPACING.md, paddingBottom: 40 },
-  header:       { gap: 2, marginBottom: SPACING.xs },
+  header:       { gap: 2, marginBottom: SPACING.xs, paddingLeft: 110 },
   greeting:     { fontSize: 22, fontWeight: '700' },
   date:         { fontSize: 13 },
   mainCard:     { borderRadius: BORDER_RADIUS.lg, borderWidth: 1, padding: SPACING.md, flexDirection: 'row', alignItems: 'center' },
