@@ -802,8 +802,11 @@ export function AICompanion() {
   const store    = useStore();
   const insets   = useSafeAreaInsets();
   const C        = useAppColors();
+  // La variable de entorno tiene PRIORIDAD sobre la clave guardada manualmente.
+  // Esto asegura que todos los avatares y modos usen la misma clave del sistema.
+  const _envKey   = (process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '').trim();
   const apiKey    = useSelector((s: RootState) =>
-    s.settings.groqApiKey || process.env.EXPO_PUBLIC_GROQ_API_KEY || ''
+    _envKey || s.settings.groqApiKey || ''
   );
   const aiEnabled = useSelector((s: RootState) => s.settings.aiEnabled ?? true);
   const currentMode         = useSelector((s: RootState) => s.userMode?.currentMode ?? 'adolescent');

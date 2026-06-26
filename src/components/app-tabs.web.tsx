@@ -9,20 +9,13 @@ import { useSelector } from 'react-redux';
 
 import { COLORS, SPACING, BORDER_RADIUS } from '@/constants/theme';
 import { useAppColors } from '@/hooks/useAppColors';
+import { TAB_CONFIG } from '@/constants/modeNavigationConfig';
 import type { RootState } from '@/store/store';
 
 const SIDEBAR_W  = 220;
 const SIDEBAR_SM = 56;
 const DRAWER_W   = 260;
 const MOBILE_BP  = 768; // px — por debajo de esto, comportamiento drawer
-
-const TABS = [
-  { name: 'index',    href: '/',         emoji: '⚡', label: 'Inicio',  color: COLORS.gamification },
-  { name: 'health',   href: '/health',   emoji: '🩺', label: 'Salud',   color: COLORS.health },
-  { name: 'study',    href: '/study',    emoji: '✏️', label: 'Estudio', color: COLORS.study },
-  { name: 'home',     href: '/home',     emoji: '🏠', label: 'Casa',    color: COLORS.home },
-  { name: 'relation', href: '/relation', emoji: '💬', label: 'Familia', color: COLORS.relation },
-] as const;
 
 export default function AppTabs() {
   const C        = useAppColors();
@@ -33,6 +26,15 @@ export default function AppTabs() {
   const isMobile = width < MOBILE_BP;
 
   const gamificationEnabled = useSelector((s: RootState) => s.settings?.gamificationEnabled ?? true);
+  const currentMode = useSelector((s: RootState) => s.userMode?.currentMode ?? 'adolescent');
+
+  // Tabs dinámicos según el modo activo — cada modo tiene sus propias secciones
+  const TABS = TAB_CONFIG[currentMode] ?? TAB_CONFIG.adolescent;
+  // En adult/parent los ajustes van dentro de TABS; en adolescent se pone aparte
+  const hasSettingsInTabs = TABS.some(t => t.name === 'settings');
+  // Tabs de contenido (sin settings si ya está en TABS como último)
+  const mainTabs = hasSettingsInTabs ? TABS.filter(t => t.name !== 'settings') : TABS;
+  const settingsTab = hasSettingsInTabs ? TABS.find(t => t.name === 'settings') : null;
 
   // ── Estado sidebar desktop ──────────────────────────────────────────────────
   const [collapsed, setCollapsed] = useState(false);
@@ -108,7 +110,7 @@ export default function AppTabs() {
     href === '/' ? pathname === '/' : pathname.startsWith(href);
 
   // ── Render item de navegación (compartido) ──────────────────────────────────
-  const NavItem = ({ tab, onPress }: { tab: typeof TABS[number]; onPress: () => void }) => {
+  const NavItem = ({ tab, onPress }: { tab: (typeof TABS)[number]; onPress: () => void }) => {
     const focused = isActive(tab.href);
     return (
       <Pressable
@@ -162,13 +164,15 @@ export default function AppTabs() {
         <TabList asChild>
           <View style={styles.hiddenList}>
             {TABS.map(tab => (
-              <TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
+              <TabTrigger key={tab.name} name={tab.name} href={tab.href as any} asChild>
                 <View />
               </TabTrigger>
             ))}
-            <TabTrigger name="settings" href="/settings" asChild>
-              <View />
-            </TabTrigger>
+            {!hasSettingsInTabs && (
+              <TabTrigger name="settings" href="/settings" asChild>
+                <View />
+              </TabTrigger>
+            )}
           </View>
         </TabList>
 
@@ -213,19 +217,22 @@ export default function AppTabs() {
               </TouchableOpacity>
             </View>
 
-            {/* Nav */}
+            {/* Nav — secciones del modo activo */}
             <View style={styles.navList}>
-              {TABS.map(tab => (
+              {mainTabs.map(tab => (
                 <NavItem key={tab.name} tab={tab} onPress={() => navigate(tab.href)} />
               ))}
             </View>
 
             {/* Footer */}
             <View style={[styles.sidebarBottom, { borderTopColor: borderColor }]}>
-              {gamificationEnabled && (
+              {gamificationEnabled && currentMode === 'adolescent' && (
                 <Text style={[styles.bottomHint, { color: textMuted }]}>🎮 Gamificación activa</Text>
               )}
-              <SettingsItem />
+              {settingsTab
+                ? <NavItem tab={settingsTab} onPress={() => navigate(settingsTab.href)} />
+                : <SettingsItem />
+              }
             </View>
           </Animated.View>
         )}
@@ -241,13 +248,15 @@ export default function AppTabs() {
       <TabList asChild>
         <View style={styles.hiddenList}>
           {TABS.map(tab => (
-            <TabTrigger key={tab.name} name={tab.name} href={tab.href} asChild>
+            <TabTrigger key={tab.name} name={tab.name} href={tab.href as any} asChild>
               <View />
             </TabTrigger>
           ))}
-          <TabTrigger name="settings" href="/settings" asChild>
-            <View />
-          </TabTrigger>
+          {!hasSettingsInTabs && (
+            <TabTrigger name="settings" href="/settings" asChild>
+              <View />
+            </TabTrigger>
+          )}
         </View>
       </TabList>
 
@@ -276,9 +285,9 @@ export default function AppTabs() {
           </TouchableOpacity>
         </View>
 
-        {/* Nav items */}
+        {/* Nav items — específicos del modo activo */}
         <View style={styles.navList}>
-          {TABS.map(tab => {
+          {mainTabs.map(tab => {
             const focused = isActive(tab.href);
             return (
               <Pressable
@@ -307,7 +316,7 @@ export default function AppTabs() {
 
         {/* Footer */}
         <View style={[styles.sidebarBottom, { borderTopColor: borderColor }]}>
-          {gamificationEnabled && (
+          {gamificationEnabled && currentMode === 'adolescent' && (
             <Animated.Text
               numberOfLines={1}
               style={[styles.bottomHint, { color: textMuted, opacity: labelOpacity }]}
@@ -315,25 +324,41 @@ export default function AppTabs() {
               🎮 Gamificación activa
             </Animated.Text>
           )}
-          <Pressable
-            onPress={() => router.push('/settings' as any)}
-            style={({ hovered }: any) => [
-              styles.navItem,
-              isActive('/settings') && { backgroundColor: textMuted + '18' },
-              !isActive('/settings') && hovered && { backgroundColor: borderColor + '80' },
-            ]}
-          >
-            {isActive('/settings') && <View style={[styles.activeBar, { backgroundColor: textMuted }]} />}
-            <View style={[styles.emojiWrap, isActive('/settings') && { backgroundColor: textMuted + '22' }]}>
-              <Text style={styles.navEmoji}>⚙️</Text>
-            </View>
-            <Animated.Text
-              numberOfLines={1}
-              style={[styles.navLabel, { color: textMuted, opacity: labelOpacity }]}
+          {settingsTab ? (
+            <Pressable
+              onPress={() => router.push(settingsTab.href as any)}
+              style={({ hovered }: any) => [
+                styles.navItem,
+                isActive(settingsTab.href) && { backgroundColor: settingsTab.color + '18' },
+                !isActive(settingsTab.href) && hovered && { backgroundColor: borderColor + '80' },
+              ]}
             >
-              Ajustes
-            </Animated.Text>
-          </Pressable>
+              {isActive(settingsTab.href) && <View style={[styles.activeBar, { backgroundColor: settingsTab.color }]} />}
+              <View style={[styles.emojiWrap, isActive(settingsTab.href) && { backgroundColor: settingsTab.color + '22' }]}>
+                <Text style={styles.navEmoji}>{settingsTab.emoji}</Text>
+              </View>
+              <Animated.Text numberOfLines={1} style={[styles.navLabel, { color: settingsTab.color, opacity: labelOpacity }]}>
+                {settingsTab.label}
+              </Animated.Text>
+            </Pressable>
+          ) : (
+            <Pressable
+              onPress={() => router.push('/settings' as any)}
+              style={({ hovered }: any) => [
+                styles.navItem,
+                isActive('/settings') && { backgroundColor: textMuted + '18' },
+                !isActive('/settings') && hovered && { backgroundColor: borderColor + '80' },
+              ]}
+            >
+              {isActive('/settings') && <View style={[styles.activeBar, { backgroundColor: textMuted }]} />}
+              <View style={[styles.emojiWrap, isActive('/settings') && { backgroundColor: textMuted + '22' }]}>
+                <Text style={styles.navEmoji}>⚙️</Text>
+              </View>
+              <Animated.Text numberOfLines={1} style={[styles.navLabel, { color: textMuted, opacity: labelOpacity }]}>
+                Ajustes
+              </Animated.Text>
+            </Pressable>
+          )}
         </View>
       </Animated.View>
     </Tabs>

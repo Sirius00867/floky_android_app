@@ -96,6 +96,8 @@ export default function SettingsScreen() {
   const colorScheme     = useSelector((s: RootState) => s.settings.colorScheme ?? 'light');
   const groqApiKey      = useSelector((s: RootState) => s.settings.groqApiKey ?? '');
   const aiEnabled       = useSelector((s: RootState) => s.settings.aiEnabled ?? true);
+  // La env var se inyecta en tiempo de compilación — si está definida, no se necesita input manual
+  const envGroqKey      = (process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '').trim();
   const companion       = useSelector((s: RootState) => s.settings.adolescentCompanion ?? 'gerbera');
   const displayMode     = useSelector((s: RootState) => s.settings.displayMode ?? 'dyslexia');
   const gamificationEnabled = useSelector((s: RootState) => s.settings.gamificationEnabled ?? true);
@@ -117,6 +119,7 @@ export default function SettingsScreen() {
   const [nsSecretVisible, setNsSecretVisible] = useState(false);
   const [editingSections, setEditingSections] = useState<'health' | 'study' | 'index' | 'home' | 'relation' | null>(null);
   const [infoModal, setInfoModal] = useState<'compat' | 'policy' | null>(null);
+  const [showModeModal, setShowModeModal] = useState(false);
   const [nsTesting, setNsTesting]         = useState(false);
   const [nsStatus, setNsStatus]           = useState<'idle'|'ok'|'error'>('idle');
   const [nsError, setNsError]             = useState('');
@@ -607,6 +610,50 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* API Key de Groq — oculta si viene de variable de entorno */}
+        {aiEnabled && !envGroqKey && (
+          <View style={styles.card}>
+            <DyslexiaText variant="caption" color={C.darkTertiary} style={styles.fieldLabel}>API KEY DE GROQ</DyslexiaText>
+            <View style={styles.nameRow}>
+              <TextInput
+                style={[styles.nameInput, { flex: 1, fontFamily: 'monospace', fontSize: 12 }]}
+                placeholder="gsk_…"
+                placeholderTextColor={C.darkTertiary}
+                value={groqKeyInput}
+                onChangeText={setGroqKeyInput}
+                autoCapitalize="none"
+                autoCorrect={false}
+                secureTextEntry={false}
+                maxLength={200}
+              />
+              <TouchableOpacity
+                style={styles.saveBtn}
+                onPress={() => dispatch(setGroqApiKey(groqKeyInput.trim()))}
+              >
+                <DyslexiaText variant="small" color="#fff" style={{ fontWeight: '600' }}>Guardar</DyslexiaText>
+              </TouchableOpacity>
+            </View>
+            {!!groqApiKey && (
+              <DyslexiaText variant="caption" color="#10B981" style={{ marginTop: 4 }}>
+                ✓ Clave guardada ({groqApiKey.slice(0, 8)}…)
+              </DyslexiaText>
+            )}
+            <DyslexiaText variant="caption" color={C.darkTertiary} style={{ marginTop: 4, lineHeight: 18 }}>
+              Consigue tu clave gratuita en console.groq.com
+            </DyslexiaText>
+          </View>
+        )}
+        {aiEnabled && !!envGroqKey && (
+          <View style={[styles.card, { backgroundColor: '#10B98110' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: SPACING.sm }}>
+              <Text style={{ fontSize: 16 }}>🔑</Text>
+              <DyslexiaText variant="caption" color="#10B981" style={{ flex: 1 }}>
+                API Key gestionada por el sistema ({envGroqKey.slice(0, 8)}…)
+              </DyslexiaText>
+            </View>
+          </View>
+        )}
 
         {/* Selector de compañera */}
         {aiEnabled && (
@@ -1260,23 +1307,7 @@ export default function SettingsScreen() {
           <View style={styles.listItemBorder} />
           <TouchableOpacity
             style={styles.listItem}
-            onPress={() => {
-              Alert.alert(
-                'Cambiar modo',
-                '¿A qué modo quieres cambiar?',
-                [
-                  { text: 'Cancelar', style: 'cancel' },
-                  { text: '📊 Adulto', onPress: () => {
-                      dispatch(setUserMode('adult'));
-                      if (!seenModeIntros.includes('adult')) dispatch(setPendingModeIntro('adult'));
-                    }},
-                  { text: '🐥 Padre/Madre', onPress: () => {
-                      dispatch(setUserMode('parent'));
-                      if (!seenModeIntros.includes('parent')) dispatch(setPendingModeIntro('parent'));
-                    }},
-                ],
-              );
-            }}
+            onPress={() => setShowModeModal(true)}
             activeOpacity={0.7}
           >
             <Text style={{ fontSize: 20 }}>🔄</Text>
@@ -1584,6 +1615,48 @@ export default function SettingsScreen() {
                 <DyslexiaText variant="body" color="#fff" style={{ fontWeight: '600' }}>Añadir</DyslexiaText>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de cambio de modo — animationType="slide" para compatibilidad web/nativo */}
+      <Modal visible={showModeModal} transparent animationType="slide" onRequestClose={() => setShowModeModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 9999 }}>
+          <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, gap: 12 }}>
+            <DyslexiaText variant="h3" color={C.dark} style={{ fontWeight: '700', textAlign: 'center' }}>
+              Cambiar modo
+            </DyslexiaText>
+            <DyslexiaText variant="caption" color={C.darkTertiary} style={{ textAlign: 'center' }}>
+              ¿A qué modo quieres cambiar?
+            </DyslexiaText>
+            {([
+              { mode: 'adult'  as UserMode, emoji: '📊', label: 'Adulto',      desc: 'Vista simplificada para adultos' },
+              { mode: 'parent' as UserMode, emoji: '🐥', label: 'Padre/Madre', desc: 'Monitorización del hijo/a' },
+            ] as const).map(opt => (
+              <TouchableOpacity
+                key={opt.mode}
+                onPress={() => {
+                  dispatch(setUserMode(opt.mode));
+                  if (!seenModeIntros.includes(opt.mode)) dispatch(setPendingModeIntro(opt.mode));
+                  setShowModeModal(false);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder }}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 24 }}>{opt.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <DyslexiaText variant="body" color={C.dark} style={{ fontWeight: '700' }}>{opt.label}</DyslexiaText>
+                  <DyslexiaText variant="caption" color={C.darkTertiary}>{opt.desc}</DyslexiaText>
+                </View>
+                <Text style={{ color: C.darkTertiary as string, fontSize: 16 }}>›</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              onPress={() => setShowModeModal(false)}
+              style={{ padding: 14, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder }}
+            >
+              <DyslexiaText variant="body" color={C.darkSecondary}>Cancelar</DyslexiaText>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

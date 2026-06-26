@@ -118,10 +118,10 @@ async function buildHeaders(apiSecret: string): Promise<Record<string, string>> 
   };
 }
 
-function todayMidnightIso(): string {
+function todayMidnightMs(): number {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
-  return d.toISOString();
+  return d.getTime(); // epoch ms en hora local — evita desfase de zona horaria
 }
 
 // ── API calls ─────────────────────────────────────────────────────────────────
@@ -214,15 +214,32 @@ export async function fetchNightscoutEntries(
   if (!validateHttpsUrl(url).ok) return [];
   try {
     const headers = await buildHeaders(apiSecret);
-    const params = new URLSearchParams({
-      count: count.toString(),
-      'find[dateString][$gte]': todayMidnightIso(),
-    });
+    // No usamos find[date][$gte] porque no todas las versiones de Nightscout
+    // lo soportan. Pedimos count=288 (24h a 5 min/lectura) y filtramos en cliente.
+    const params = new URLSearchParams({ count: count.toString() });
     const res = await nsProxyFetch(url, `/api/v1/entries.json?${params}`, { headers });
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.log('[Nightscout] entries fetch failed:', res.status);
+      return [];
+    }
     const data: NightscoutEntry[] = await res.json();
-    return data.filter(e => e.sgv > 0);
-  } catch {
+    // Nightscout devuelve descendente (más reciente primero); ordenamos ascendente
+    // para que la gráfica pueda dibujar la curva de izquierda a derecha.
+    const filtered = data
+      .filter(e => e.sgv > 0 && e.date > 0)
+      .sort((a, b) => a.date - b.date);
+    console.log(`[Nightscout] entries recibidas: ${filtered.length}`);
+    if (filtered.length > 0) {
+      const first = filtered[0];
+      const last  = filtered[filtered.length - 1];
+      console.log(
+        `[Nightscout] rango: ${new Date(first.date).toLocaleTimeString()} → ` +
+        `${new Date(last.date).toLocaleTimeString()} | último SGV: ${last.sgv} mg/dL`,
+      );
+    }
+    return filtered;
+  } catch (e) {
+    console.log('[Nightscout] entries error:', e);
     return [];
   }
 }
@@ -252,7 +269,7 @@ export async function fetchNightscoutTreatments(
     const headers = await buildHeaders(apiSecret);
     const params = new URLSearchParams({
       count: count.toString(),
-      'find[created_at][$gte]': todayMidnightIso(),
+      'find[created_at][$gte]': new Date(todayMidnightMs()).toISOString(),
     });
     const res = await nsProxyFetch(url, `/api/v1/treatments.json?${params}`, { headers });
     if (!res.ok) return [];

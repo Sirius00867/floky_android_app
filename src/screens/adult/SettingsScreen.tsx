@@ -10,6 +10,7 @@ import { APP_VERSION } from '@/constants/version';
 import { DyslexiaText } from '@/components/shared/DyslexiaText';
 import {
   setUserName, setColorScheme, setDisplayMode, setAiEnabled, setCompanion, setAdultCompanion,
+  setGroqApiKey,
   setNotifGlucose,
   setNightscoutUrl, setNightscoutApiSecret,
   setLibreLinkUpEmail, setDexcomShareUsername, setTidepoolEmail,
@@ -72,7 +73,10 @@ export default function AdultSettingsScreen() {
   const colorScheme       = useSelector((s: RootState) => s.settings.colorScheme ?? 'light');
   const displayMode       = useSelector((s: RootState) => s.settings.displayMode ?? 'normal');
   const aiEnabled         = useSelector((s: RootState) => s.settings.aiEnabled ?? true);
+  const groqApiKey        = useSelector((s: RootState) => s.settings.groqApiKey ?? '');
   const companion         = useSelector((s: RootState) => s.settings.adultCompanion ?? 'zen_gem');
+  const envGroqKey        = (process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '').trim();
+  const [groqKeyInput, setGroqKeyInput] = useState(groqApiKey);
   const notifGlucose      = useSelector((s: RootState) => s.settings.notifGlucose ?? true);
   const glucoseTargetLow  = useSelector((s: RootState) => s.settings.glucoseTargetLow ?? 70);
   const glucoseTargetHigh = useSelector((s: RootState) => s.settings.glucoseTargetHigh ?? 180);
@@ -84,6 +88,7 @@ export default function AdultSettingsScreen() {
 
   const [nameInput, setNameInput]     = useState(userName);
   const [infoModal, setInfoModal]     = useState<'compat' | 'policy' | null>(null);
+  const [showModeModal, setShowModeModal] = useState(false);
 
   // Nightscout
   const [nsUrlInput, setNsUrlInput]         = useState(nightscoutUrl);
@@ -441,6 +446,54 @@ export default function AdultSettingsScreen() {
           </View>
         )}
 
+        {/* API Key de Groq — oculta si viene de variable de entorno */}
+        {aiEnabled && !envGroqKey && (
+          <View style={s.card}>
+            <DyslexiaText variant="caption" color={C.darkTertiary}
+              style={{ fontWeight: '600', paddingHorizontal: SPACING.md, paddingTop: SPACING.md, paddingBottom: 4 }}>
+              API KEY DE GROQ
+            </DyslexiaText>
+            <View style={{ flexDirection: 'row', gap: SPACING.sm, padding: SPACING.md, paddingTop: 4 }}>
+              <TextInput
+                style={{
+                  flex: 1, backgroundColor: C.bg, borderRadius: 8, padding: SPACING.sm,
+                  color: C.dark as string, fontFamily: 'monospace', fontSize: 12,
+                  borderWidth: 1, borderColor: C.cardBorder as string,
+                }}
+                placeholder="gsk_…"
+                placeholderTextColor={C.darkTertiary as string}
+                value={groqKeyInput}
+                onChangeText={setGroqKeyInput}
+                autoCapitalize="none"
+                autoCorrect={false}
+                maxLength={200}
+              />
+              <TouchableOpacity
+                style={{ backgroundColor: C.health, borderRadius: 8, paddingHorizontal: SPACING.md, justifyContent: 'center' }}
+                onPress={() => dispatch(setGroqApiKey(groqKeyInput.trim()))}
+              >
+                <DyslexiaText variant="small" color="#fff" style={{ fontWeight: '600' }}>Guardar</DyslexiaText>
+              </TouchableOpacity>
+            </View>
+            {!!groqApiKey && (
+              <DyslexiaText variant="caption" color="#10B981"
+                style={{ paddingHorizontal: SPACING.md, paddingBottom: SPACING.sm }}>
+                ✓ Clave guardada ({groqApiKey.slice(0, 8)}…)
+              </DyslexiaText>
+            )}
+          </View>
+        )}
+        {aiEnabled && !!envGroqKey && (
+          <View style={[s.card, { backgroundColor: '#10B98110' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, padding: SPACING.md }}>
+              <Text style={{ fontSize: 16 }}>🔑</Text>
+              <DyslexiaText variant="caption" color="#10B981" style={{ flex: 1 }}>
+                API Key gestionada por el sistema ({envGroqKey.slice(0, 8)}…)
+              </DyslexiaText>
+            </View>
+          </View>
+        )}
+
         {/* ── SENSORES CGM ── */}
         <SectionHeader title="SENSORES Y BOMBA 💉" />
 
@@ -694,21 +747,7 @@ export default function AdultSettingsScreen() {
           <View style={s.listItemBorder} />
           <TouchableOpacity
             style={s.listItem}
-            onPress={() => Alert.alert(
-              'Cambiar modo',
-              '¿A qué modo quieres cambiar?',
-              [
-                { text: 'Cancelar', style: 'cancel' },
-                { text: '⚡ Adolescente', onPress: () => {
-                    dispatch(setUserMode('adolescent'));
-                    if (!seenModeIntros.includes('adolescent')) dispatch(setPendingModeIntro('adolescent'));
-                  }},
-                { text: '🐥 Padre/Madre', onPress: () => {
-                    dispatch(setUserMode('parent'));
-                    if (!seenModeIntros.includes('parent')) dispatch(setPendingModeIntro('parent'));
-                  }},
-              ],
-            )}
+            onPress={() => setShowModeModal(true)}
             activeOpacity={0.7}
           >
             <Text style={{ fontSize: 20 }}>🔄</Text>
@@ -828,6 +867,48 @@ export default function AdultSettingsScreen() {
                 {'🔒 Todos tus datos se almacenan localmente en tu dispositivo. No enviamos ni vendemos datos personales a terceros.\n\n⚠️ floky NO es un dispositivo médico certificado (MDR 2017/745). No reemplaza el consejo de tu equipo médico.\n\n📧 Contacto: diegozamoranogarcia@gmail.com'}
               </DyslexiaText>
             </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Modal de cambio de modo — animationType="slide" para compatibilidad web/nativo */}
+      <Modal visible={showModeModal} transparent animationType="slide" onRequestClose={() => setShowModeModal(false)}>
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', justifyContent: 'center', alignItems: 'center', padding: 24, zIndex: 9999 }}>
+          <View style={{ backgroundColor: C.card, borderRadius: 16, padding: 24, width: '100%', maxWidth: 360, gap: 12 }}>
+            <DyslexiaText variant="h3" color={C.dark} style={{ fontWeight: '700', textAlign: 'center' }}>
+              Cambiar modo
+            </DyslexiaText>
+            <DyslexiaText variant="caption" color={C.darkTertiary} style={{ textAlign: 'center' }}>
+              ¿A qué modo quieres cambiar?
+            </DyslexiaText>
+            {([
+              { mode: 'adolescent' as UserMode, emoji: '⚡', label: 'Adolescente', desc: 'Vista gamificada accesible' },
+              { mode: 'parent'     as UserMode, emoji: '🐥', label: 'Padre/Madre', desc: 'Monitorización del hijo/a' },
+            ] as const).map(opt => (
+              <TouchableOpacity
+                key={opt.mode}
+                onPress={() => {
+                  dispatch(setUserMode(opt.mode));
+                  if (!seenModeIntros.includes(opt.mode)) dispatch(setPendingModeIntro(opt.mode));
+                  setShowModeModal(false);
+                }}
+                style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, backgroundColor: C.bg, borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder }}
+                activeOpacity={0.7}
+              >
+                <Text style={{ fontSize: 24 }}>{opt.emoji}</Text>
+                <View style={{ flex: 1 }}>
+                  <DyslexiaText variant="body" color={C.dark} style={{ fontWeight: '700' }}>{opt.label}</DyslexiaText>
+                  <DyslexiaText variant="caption" color={C.darkTertiary}>{opt.desc}</DyslexiaText>
+                </View>
+                <Text style={{ color: C.darkTertiary as string, fontSize: 16 }}>›</Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              onPress={() => setShowModeModal(false)}
+              style={{ padding: 14, alignItems: 'center', borderRadius: 12, borderWidth: 1, borderColor: C.cardBorder }}
+            >
+              <DyslexiaText variant="body" color={C.darkSecondary}>Cancelar</DyslexiaText>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>

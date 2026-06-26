@@ -11,7 +11,7 @@
  *  • Tiempo en Rango (TIR) en cabecera
  */
 import React, { useState } from 'react';
-import { View, TouchableOpacity, useWindowDimensions, Platform } from 'react-native';
+import { View, TouchableOpacity, useWindowDimensions, Platform, type LayoutChangeEvent } from 'react-native';
 import { Svg, G, Path, Line, Circle, Text as SvgText, Rect, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { DyslexiaText } from './DyslexiaText';
 import type { AppColors } from '@/hooks/useAppColors';
@@ -93,10 +93,13 @@ export function GlucoseChart({
   defaultWindow = 24,
 }: GlucoseChartProps) {
   const { width: screenW } = useWindowDimensions();
-  const [selected, setSelected] = useState<ChartPoint | null>(null);
-  const [windowH, setWindowH]   = useState<ChartWindowH>(defaultWindow);
+  const [selected, setSelected]     = useState<ChartPoint | null>(null);
+  const [windowH, setWindowH]       = useState<ChartWindowH>(defaultWindow);
+  const [containerW, setContainerW] = useState(0);
 
-  const W      = Math.min(screenW - 64, 600);
+  // Usa el ancho real del contenedor (medido con onLayout) para evitar recortes
+  // cuando el padding del padre no coincide con el offset de 64px esperado.
+  const W = Math.min(containerW > 0 ? containerW : screenW - 64, 600);
   const H      = 260;
   const PAD_L  = 44;
   const PAD_R  = 14;
@@ -194,7 +197,7 @@ export function GlucoseChart({
   const showLabels = visiblePts.length <= 10;
 
   return (
-    <View>
+    <View onLayout={(e: LayoutChangeEvent) => setContainerW(e.nativeEvent.layout.width)}>
       {/* ── CABECERA ── */}
       <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 4 }}>
         <View>
