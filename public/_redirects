@@ -1,24 +1,5 @@
-# Netlify Proxy Inverso — evita CORS en PWA/web
-# Orden: reglas específicas primero; SPA fallback al final.
-
-# Nightscout — proxy dinámico vía Netlify Function.
-# La URL del servidor real viaja en el header X-Nightscout-Target (ver nightscoutService.ts).
-/api/nightscout/*  /.netlify/functions/nightscout-proxy  200
-
-# Dexcom Share Web Services — EU (España/Europa): shareous1.dexcom.com
-/api/dexcom/*      https://shareous1.dexcom.com/:splat   200!
-
-# Dexcom Share Web Services — US (EE.UU.): share1.dexcom.com (región separada)
-/api/dexcom-us/*   https://share1.dexcom.com/:splat      200!
-
-# FreeStyle LibreLink (LibreView) — EU: api-eu.libreview.io
-/api/librelink/*   https://api-eu.libreview.io/:splat    200!
-
-# FreeStyle LibreLink (LibreView) — US: api.libreview.io
-/api/librelink-us/*  https://api.libreview.io/:splat     200!
-
-# Tidepool
-/api/tidepool/*    https://api.tidepool.org/:splat       200!
-
-# SPA fallback — siempre sirve index.html para rutas cliente (debe ir al final)
-/*   /index.html   200
+﻿/api/nightscout/*  https://site--nightscout--kb7xvjmtg28t.code.run/:splat  200!
+/api/dexcom/*      https://share2.dexcom.com/:splat                         200!
+/api/librelink/*   https://api.libreview.io/:splat                          200!
+/api/tidepool/*    https://api.tidepool.org/:splat                          200!
+/*                 /index.html                                               200
